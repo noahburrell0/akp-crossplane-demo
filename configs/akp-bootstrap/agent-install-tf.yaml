@@ -41,7 +41,7 @@ spec:
     - source: SecretKey
       secretKeyRef:
         key: tfvars
-        name: akp-api-secret
+        name: tfvars-secret
         namespace: default
     vars:
     - key: org_name
