@@ -93,7 +93,7 @@ spec:
 
       # Initialize the AWS provider
       provider "aws" {
-        shared_credentials_files = ["${path.module}/aws-creds.ini"]
+        shared_credentials_files = ["aws-creds.ini"]
       }
 
       # Get information about an existing Argo CD instance
