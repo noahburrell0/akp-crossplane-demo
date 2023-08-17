@@ -1,0 +1,105 @@
+apiVersion: tf.upbound.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: akp-provider
+spec:
+  credentials:
+    - source: Secret
+      filename: kubeconfig
+      secretRef:
+        namespace: default
+        name: kubeconfig-secret
+        key: kubeconfig
+
+  configuration: |
+    terraform {
+      required_providers {
+        akp = {
+          source = "akuity/akp"
+          version = "~> 0.5"
+        }
+      }
+      backend "kubernetes" {
+        secret_suffix = "akp-provider"
+        namespace         = "default"
+        in_cluster_config = true
+      }
+    }
+
+---
+
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: akuity-agent
+spec:
+  providerConfigRef:
+    name: akp-provider
+  forProvider:
+    source: Inline
+    varFiles:
+    - source: SecretKey
+      secretKeyRef:
+        key: tfvars
+        name: akp-api-secret
+        namespace: default
+    vars:
+    - key: org_name
+      value: akuity # The org name in AKP
+    - key: akp_instance_name
+      value: noah-demo # The name of the Argo CD instance in AKP to attach the new cluster to
+    - key: cluster_name
+      value: homelab-cluster # What to name the cluster in AKP
+    - key: kubeconfig_path
+      value: kubeconfig # Should match the filename supplied in the provider config
+    - key: kubeconfig_context
+      value: homelab # Must match a context in the kubeconfig secret supplied by the provider config
+    module: |
+      # Declare the required variables
+      variable "api_key_id" {
+        type    = string
+        sensitive = true
+      }
+      variable "api_key_secret" {
+        type    = string
+        sensitive = true
+      }
+      variable "org_name" {
+        type    = string
+      }
+      variable "akp_instance_name" {
+        type    = string
+      }
+      variable "cluster_name" {
+        type    = string
+      }
+      variable "kubeconfig_path" {
+        type    = string
+      }
+      variable "kubeconfig_context" {
+        type    = string
+      }
+
+      # Initialize the provider
+      provider "akp" {
+        org_name = var.org_name
+        api_key_id = var.api_key_id
+        api_key_secret = var.api_key_secret
+      }
+
+      # Get information about an existing Argo CD instance
+      data "akp_instance" "existing" {
+        name = var.akp_instance_name
+      }
+
+      # Provision and deploy a new agent
+      resource "akp_cluster" "example" {
+        name        = var.cluster_name
+        namespace   = "akuity"
+        size        = "small"
+        instance_id = data.akp_instance.existing.id
+        kube_config = {
+          config_path = var.kubeconfig_path
+          config_context = var.kubeconfig_context
+        }
+      }

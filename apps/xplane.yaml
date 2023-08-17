@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: xplane
+  namespace: argocd
+spec:
+  project: default
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+  source:
+  - chart: crossplane
+    repoURL: https://charts.crossplane.io/stable
+    targetRevision: 1.13.2
+  destination:
+    name: cluster-xplane
+    namespace: crossplane-system
+
