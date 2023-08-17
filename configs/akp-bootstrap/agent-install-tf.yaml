@@ -5,11 +5,11 @@ metadata:
 spec:
   credentials:
     - source: Secret
-      filename: kubeconfig
+      filename: aws-creds.ini
       secretRef:
         namespace: default
-        name: kubeconfig-secret
-        key: kubeconfig
+        name: aws-creds-secret
+        key: credentials
 
   configuration: |
     terraform {
@@ -17,6 +17,10 @@ spec:
         akp = {
           source = "akuity/akp"
           version = "~> 0.5"
+        }
+        aws = {
+          source  = "hashicorp/aws"
+          version = "~> 5.0"
         }
       }
       backend "kubernetes" {
@@ -80,16 +84,30 @@ spec:
         type    = string
       }
 
-      # Initialize the provider
+      # Initialize the AKP provider
       provider "akp" {
         org_name = var.org_name
         api_key_id = var.api_key_id
         api_key_secret = var.api_key_secret
       }
 
+      # Initialize the AWS provider
+      provider "aws" {
+        shared_credentials_files = ["${path.module}/aws-creds.ini"]
+      }
+
       # Get information about an existing Argo CD instance
       data "akp_instance" "existing" {
         name = var.akp_instance_name
+      }
+
+      # Get EKS connection details
+      data "aws_eks_cluster" "example" {
+        name = "fico-xplane-demo"
+      }
+
+      data "aws_eks_cluster_auth" "example" {
+        name = "fico-xplane-demo"
       }
 
       # Provision and deploy a new agent
@@ -107,7 +125,8 @@ spec:
         }
 
         # kube_config = {
-        #   config_path = var.kubeconfig_path
-        #   config_context = var.kubeconfig_context
+        #   host                   = data.aws_eks_cluster.example.endpoint
+        #   cluster_ca_certificate = base64decode(data.aws_eks_cluster.example.certificate_authority[0].data)
+        #   token                  = data.aws_eks_cluster_auth.example.token
         # }
       }
