@@ -46,10 +46,6 @@ spec:
       value: noah-demo # The name of the Argo CD instance in AKP to attach the new cluster to
     - key: cluster_name
       value: example-cluster # What to name the cluster in AKP
-    - key: kubeconfig_path
-      value: kubeconfig # Should match the filename supplied in the provider config
-    - key: kubeconfig_context
-      value: example-context # Must match a context in the kubeconfig secret supplied by the provider config
     module: |
       # Declare the required variables
       variable "api_key_id" {
@@ -75,12 +71,6 @@ spec:
         type    = string
       }
       variable "cluster_name" {
-        type    = string
-      }
-      variable "kubeconfig_path" {
-        type    = string
-      }
-      variable "kubeconfig_context" {
         type    = string
       }
 
