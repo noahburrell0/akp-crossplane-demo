@@ -9,7 +9,7 @@ spec:
     syncOptions:
       - CreateNamespace=true
   source:
-  - chart: crossplane
+    chart: crossplane
     repoURL: https://charts.crossplane.io/stable
     targetRevision: 1.13.2
   destination:
