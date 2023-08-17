@@ -96,8 +96,16 @@ spec:
       resource "akp_cluster" "example" {
         name        = var.cluster_name
         namespace   = "akuity"
-        size        = "small"
         instance_id = data.akp_instance.existing.id
+        labels = {
+          example-cluster = "true"
+        }
+        spec = {
+          data = {
+            size = "small"
+          }
+        }
+
         kube_config = {
           config_path = var.kubeconfig_path
           config_context = var.kubeconfig_context
