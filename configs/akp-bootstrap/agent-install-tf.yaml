@@ -3,14 +3,6 @@ kind: ProviderConfig
 metadata:
   name: akp-provider
 spec:
-  credentials:
-    - source: Secret
-      filename: aws-creds.ini
-      secretRef:
-        namespace: default
-        name: aws-creds-secret
-        key: credentials
-
   configuration: |
     terraform {
       required_providers {
@@ -68,6 +60,14 @@ spec:
         type    = string
         sensitive = true
       }
+      variable "aws_access_key_id" {
+        type    = string
+        sensitive = true
+      }
+      variable "aws_secret_access_key" {
+        type    = string
+        sensitive = true
+      }
       variable "org_name" {
         type    = string
       }
@@ -93,7 +93,9 @@ spec:
 
       # Initialize the AWS provider
       provider "aws" {
-        shared_credentials_files = ["aws-creds.ini"]
+        access_key = var.aws_access_key_id
+        secret_key = var.aws_secret_access_key
+        region = "us-west-2"
       }
 
       # Get information about an existing Argo CD instance
