@@ -8,10 +8,15 @@ spec:
   syncPolicy:
     syncOptions:
       - CreateNamespace=true
-  source:
-    chart: crossplane
+  sources:
+  - chart: crossplane
     repoURL: https://charts.crossplane.io/stable
     targetRevision: 1.13.2
+  - repoURL: https://github.com/noahburrell0/akp-crossplane-demo.git
+    targetRevision: main
+    path: configs/xplane
+    directory:
+      recurse: true
   destination:
     name: xplane
     namespace: crossplane-system
