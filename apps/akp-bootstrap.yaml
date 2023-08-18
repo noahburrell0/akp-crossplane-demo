@@ -12,5 +12,5 @@ spec:
     directory:
       recurse: true
   destination:
-    name: xplane
+    name: demo1
     namespace: default
