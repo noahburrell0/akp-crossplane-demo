@@ -14,6 +14,10 @@ spec:
           source  = "hashicorp/aws"
           version = "~> 5.0"
         }
+        argocd = {
+          source = "oboukili/argocd"
+          version = "6.0.2"
+        }
       }
       backend "kubernetes" {
         secret_suffix = "akp-provider"
@@ -47,7 +51,10 @@ spec:
     - key: cluster_name
       value: example-cluster # What to name the cluster in AKP
     module: |
-      # Declare the required variables
+      variable "admin_password" {
+        type    = string
+        sensitive = true
+      }
       variable "api_key_id" {
         type    = string
         sensitive = true
@@ -88,9 +95,11 @@ spec:
         region = "us-west-2"
       }
 
-      # Get information about an existing Argo CD instance
-      data "akp_instance" "existing" {
-        name = var.akp_instance_name
+      # Initialize Argo CD Provider
+      provider "argocd" {
+        server_addr = "${akp_instance.example.argocd.spec.instance_spec.subdomain}.cd.akuity.cloud"
+        username    = "admin"
+        password    = var.admin_password
       }
 
       # Get EKS connection details
@@ -102,11 +111,43 @@ spec:
         name = "fico-xplane-demo"
       }
 
+      # Provision Argo CD instance
+      resource "akp_instance" "example" {
+        name = var.akp_instance_name
+        argocd = {
+          "spec" = {
+            "instance_spec" = {
+              "declarative_management_enabled" = true
+            }
+            "version" = "v2.8.0"
+          }
+        }
+        argocd_cm = {
+          data = {
+            "exec.enabled" = "true"
+            "ga.anonymizeusers" = "false"
+            "helm.enabled" = "true"
+            "kustomize.enabled" = "true"
+            "server.rbac.log.enforce.enable" = "false"
+            "statusbadge.enabled" = "false"
+            "ui.bannerpermanent" = "false"
+            "users.anonymous.enabled" = "false"
+            "accounts.admin" = "login"
+          }
+        }
+        argocd_secret = {
+          type = "Opaque"
+          string_data = {
+            "admin.password" = bcrypt(var.admin_password)
+          }
+        }
+      }
+
       # Provision and deploy a new agent
       resource "akp_cluster" "example" {
         name        = var.cluster_name
         namespace   = "akuity"
-        instance_id = data.akp_instance.existing.id
+        instance_id = akp_instance.example.id
         labels = {
           example-cluster = "true"
         }
@@ -117,13 +158,41 @@ spec:
         }
 
         kube_config = {
-          host                   = data.aws_eks_cluster.example.endpoint
+          token = data.aws_eks_cluster_auth.example.token
+          host = data.aws_eks_cluster.example.endpoint
           cluster_ca_certificate = base64decode(data.aws_eks_cluster.example.certificate_authority[0].data)
-          token                  = data.aws_eks_cluster_auth.example.token
         }
         lifecycle {
           ignore_changes = [
             kube_config.token,
           ]
+        }
+      }
+
+      # Create Application
+      resource "argocd_application" "guestbook" {
+        metadata {
+          name      = "guestbook"
+          namespace = "argocd"
+        }
+        spec {
+          project = "default"
+          destination {
+            name = akp_cluster.example.name
+            namespace = "guestbook"
+          }
+          sync_policy {
+            automated {
+              prune       = true
+              self_heal   = true
+              allow_empty = true
+            }
+            sync_options = ["CreateNamespace=true"]
+          }
+          source {
+            path = "env/dev"
+            repo_url = "https://github.com/akuity/guestbook-deploy.git"
+            target_revision = "HEAD"
+          }
         }
       }
