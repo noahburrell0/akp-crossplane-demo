@@ -104,11 +104,11 @@ spec:
 
       # Get EKS connection details
       data "aws_eks_cluster" "example" {
-        name = "fico-xplane-demo"
+        name = "xplane-demo"
       }
 
       data "aws_eks_cluster_auth" "example" {
-        name = "fico-xplane-demo"
+        name = "xplane-demo"
       }
 
       # Provision Argo CD instance
