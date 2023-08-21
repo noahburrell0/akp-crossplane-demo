@@ -47,9 +47,9 @@ spec:
     - key: org_name
       value: akuity # The org name in AKP
     - key: akp_instance_name
-      value: xplane-demo # The name of the Argo CD instance in AKP to attach the new cluster to
+      value: xplane-demo-instance # The name of the Argo CD instance in AKP to attach the new cluster to
     - key: cluster_name
-      value: example-cluster # What to name the cluster in AKP
+      value: xplane-demo-cluster # What to name the cluster in AKP
     module: |
       variable "admin_password" {
         type    = string
