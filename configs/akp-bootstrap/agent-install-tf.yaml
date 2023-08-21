@@ -20,7 +20,7 @@ spec:
         }
       }
       backend "kubernetes" {
-        secret_suffix = "akp-provider"
+        secret_suffix = "xplane-demo"
         namespace         = "default"
         in_cluster_config = true
       }
